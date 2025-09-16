@@ -1,4 +1,4 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
@@ -12,8 +12,12 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
     contextBridge.exposeInMainWorld('electronAPI', {
-      startDrag: () => ipcRenderer.send('start-drag')
-    });
+      moveWindow: (dx, dy) => ipcRenderer.send('move-window', { dx, dy })
+    })
+    contextBridge.exposeInMainWorld('AiRequest', {
+      test: () => console.log('test'),
+      get: (prompt) => ipcRenderer.send('ai-request', prompt)
+    })
   } catch (error) {
     console.error(error)
   }

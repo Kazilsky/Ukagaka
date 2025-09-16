@@ -1,54 +1,72 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import uka from '../../../resources/character.png'
 
 function App() {
-  const characterRef = useRef(null)
-  const holdTimerRef = useRef(null)
+  const [dragging, setDragging] = useState(false)
+  const lastPosRef = useRef({ x: 0, y: 0 })
 
+  /// Управление передвижением окна.
   const handleMouseDown = (event) => {
-    if (event.button === 1) { // Средняя кнопка
+    if (event.button === 2) {
+      // ПКМ
+      setDragging(true)
+      lastPosRef.current = { x: event.screenX, y: event.screenY }
+      document.body.style.cursor = 'grabbing'
       event.preventDefault()
-      
-      // Запускаем таймер на 1 секунду
-      holdTimerRef.current = setTimeout(() => {
-        console.log('Удержано 1 секунду!')
-        if (window.electronAPI?.startDrag) {
-          window.electronAPI.startDrag()
-        }
-      }, 1000)
+    }
+  }
+  /// Всё ещё управление передвижением окна (только теперь при отпускании ПКМ)
+  const handleMouseUp = (event) => {
+    if (event.button === 2) {
+      setDragging(false)
+      document.body.style.cursor = ''
+      event.preventDefault()
     }
   }
 
-  const handleMouseUp = (event) => {
-    if (event.button === 1) {
-      // Отменяем таймер если кнопку отпустили раньше
-      if (holdTimerRef.current) {
-        clearTimeout(holdTimerRef.current)
-        holdTimerRef.current = null
-        console.log('Отпущено раньше 1 секунды')
+  const handleMouseMove = (event) => {
+    if (dragging) {
+      const dx = event.screenX - lastPosRef.current.x
+      const dy = event.screenY - lastPosRef.current.y
+      lastPosRef.current = { x: event.screenX, y: event.screenY }
+      if (window.electronAPI?.moveWindow) {
+        window.electronAPI.moveWindow(dx, dy)
       }
     }
   }
 
-  const handleMouseLeave = () => {
-    // Отменяем если мышь ушла с элемента
-    if (holdTimerRef.current) {
-      clearTimeout(holdTimerRef.current)
-      holdTimerRef.current = null
-    }
+  const handleContextMenu = (event) => {
+    event.preventDefault()
+  }
+
+  const handleMouseClick = (event) => {
+    window.AiRequest.get('test')
   }
 
   return (
-    <div className="app-container">
+    <div
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onContextMenu={handleContextMenu}
+      onClick={handleMouseClick}
+      className="w-screen h-screen"
+      style={{ position: 'fixed', top: 0, left: 0, pointerEvents: 'none' }}
+    >
       <img
-        ref={characterRef}
         src={uka}
-        className="uka-character"
         alt="Ukagaka character"
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseLeave}
-        style={{ cursor: 'move' }}
+        onContextMenu={handleContextMenu}
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          pointerEvents: 'auto',
+          userSelect: 'none',
+          cursor: 'pointer'
+        }}
+        draggable={false}
       />
     </div>
   )
