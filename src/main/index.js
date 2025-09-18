@@ -8,7 +8,7 @@ let win
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 350,
+    width: 550,
     height: 520,
     resizable: false,
     show: false,
@@ -42,6 +42,12 @@ function createWindow() {
   }
 }
 
+  // IPC: переключение режима игнорирования мыши
+  ipcMain.on('set-ignore-mouse', (event, ignore) => {
+    if (!win) return
+    win.setIgnoreMouseEvents(ignore, { forward: true })
+  })
+
 // IPC для перемещения окна
 ipcMain.on('move-window', (event, { dx, dy }) => {
   if (!win) return
@@ -51,9 +57,15 @@ ipcMain.on('move-window', (event, { dx, dy }) => {
 
 // IPC для отправки запроса на AI
 ipcMain.on('ai-request', async (event, prompt) => {
-  console.log("test")
-  console.log(await AI.generateResponse("Hi!"))
+  try {
+    const response = await AI.generateResponse(prompt)
+    event.sender.send('ai-response', response)
+  } catch (err) {
+    console.error(err)
+    event.sender.send('ai-response', `Ошибка: ${err.message}`)
+  }
 })
+
 
 // Старт приложения
 app.whenReady().then(() => {

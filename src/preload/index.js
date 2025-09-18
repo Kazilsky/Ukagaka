@@ -12,11 +12,19 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
     contextBridge.exposeInMainWorld('electronAPI', {
-      moveWindow: (dx, dy) => ipcRenderer.send('move-window', { dx, dy })
+      moveWindow: (dx, dy) => ipcRenderer.send('move-window', { dx, dy }),
+      setIgnoreMouse: (ignore) => ipcRenderer.send('set-ignore-mouse', ignore),
     })
     contextBridge.exposeInMainWorld('AiRequest', {
       test: () => console.log('test'),
-      get: (prompt) => ipcRenderer.send('ai-request', prompt)
+      get: (prompt) => {
+        return new Promise((resolve, reject) => {
+          ipcRenderer.once('ai-response', (event, response) => {
+            resolve(response)
+          })
+          ipcRenderer.send('ai-request', prompt)
+        })
+      }
     })
   } catch (error) {
     console.error(error)

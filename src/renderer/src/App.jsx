@@ -1,21 +1,24 @@
 import { useRef, useState } from 'react'
+import { motion, AnimatePresence } from "motion/react"
 import uka from '../../../resources/character.png'
 
 function App() {
   const [dragging, setDragging] = useState(false)
   const lastPosRef = useRef({ x: 0, y: 0 })
 
-  /// Управление передвижением окна.
+  const [showDialog, setShowDialog] = useState(false)
+  const [messages, setMessages] = useState([])
+  const [input, setInput] = useState('')
+
   const handleMouseDown = (event) => {
     if (event.button === 2) {
-      // ПКМ
       setDragging(true)
       lastPosRef.current = { x: event.screenX, y: event.screenY }
       document.body.style.cursor = 'grabbing'
       event.preventDefault()
     }
   }
-  /// Всё ещё управление передвижением окна (только теперь при отпускании ПКМ)
+
   const handleMouseUp = (event) => {
     if (event.button === 2) {
       setDragging(false)
@@ -39,8 +42,20 @@ function App() {
     event.preventDefault()
   }
 
-  const handleMouseClick = (event) => {
-    window.AiRequest.get('test')
+  const handleMouseClick = () => {
+    setShowDialog((prev) => !prev)
+  }
+
+  const handleSend = async () => {
+    if (!input.trim()) return
+    const userMessage = input.trim()
+    setMessages((prev) => [...prev, { from: 'user', text: userMessage }])
+    setInput('')
+
+    if (window.AiRequest?.get) {
+      const reply = await window.AiRequest.get(userMessage)
+      setMessages((prev) => [...prev, { from: 'gpt', text: reply }])
+    }
   }
 
   return (
@@ -48,26 +63,82 @@ function App() {
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onContextMenu={handleContextMenu}
-      onClick={handleMouseClick}
       className="w-screen h-screen"
-      style={{ position: 'fixed', top: 0, left: 0, pointerEvents: 'none' }}
+      style={{ position: 'fixed', top: 0, left: 0 }}
     >
-      <img
+      {/* Персонаж с анимацией */}
+      <motion.img
         src={uka}
         alt="Ukagaka character"
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
         onContextMenu={handleContextMenu}
+        onClick={handleMouseClick}
         style={{
           position: 'absolute',
           left: 0,
           top: 0,
-          pointerEvents: 'auto',
           userSelect: 'none',
-          cursor: 'pointer'
+          cursor: 'pointer',
+          pointerEvents: 'auto'
         }}
+        onMouseEnter={() => window.electronAPI?.setIgnoreMouse(false)}
+        onMouseLeave={() => window.electronAPI?.setIgnoreMouse(true)}
         draggable={false}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 20 }}
       />
+
+      {/* Диалоговое окно с плавным появлением */}
+      <AnimatePresence>
+        {showDialog && (
+          <motion.div
+            className="absolute left-40 top-10 w-96 bg-gradient-to-br from-white/90 to-gray-100/90 border border-gray-300 rounded-2xl shadow-xl flex flex-col"
+            style={{ pointerEvents: 'auto' }}
+            onMouseEnter={() => window.electronAPI?.setIgnoreMouse(false)}
+            onMouseLeave={() => window.electronAPI?.setIgnoreMouse(true)}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ type: 'spring', stiffness: 120, damping: 18 }}
+          >
+            <div className="p-3 overflow-y-auto max-h-64 space-y-2">
+              {(messages || []).map((m, i) => (
+                <motion.div
+                  key={i}
+                  className={`p-2 rounded-xl max-w-[80%] ${
+                    m.from === 'user'
+                      ? 'bg-blue-200 self-end text-right'
+                      : 'bg-gray-200 self-start text-left'
+                  }`}
+                  initial={{ opacity: 0, x: m.from === 'user' ? 50 : -50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ type: 'spring', stiffness: 120, damping: 18 }}
+                >
+                  {m.text}
+                </motion.div>
+              ))}
+            </div>
+            <div className="flex border-t p-2">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                placeholder="Напиши что-нибудь..."
+                className="flex-1 p-2 rounded-lg border border-gray-300"
+              />
+              <button
+                onClick={handleSend}
+                className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 active:scale-95"
+              >
+                Отправить
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

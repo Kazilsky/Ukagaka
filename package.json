@@ -22,6 +22,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@tailwindcss/vite": "^4.1.13",
     "dotenv": "^17.2.2",
+    "motion": "^12.23.14",
     "tailwindcss": "^4.1.13"
   },
   "devDependencies": {
