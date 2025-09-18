@@ -2,32 +2,32 @@
 @import 'tailwindcss';
 
 body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    user-select: none;
 }
 
 .uka-character {
-  cursor: pointer;
+    cursor: pointer;
 }
 
 .draggable {
-  -webkit-app-region: drag;
+    -webkit-app-region: drag;
 }
 code {
-  font-weight: 600;
-  padding: 3px 5px;
-  border-radius: 2px;
-  background-color: var(--color-background-mute);
-  font-family:
-    ui-monospace,
-    SFMono-Regular,
-    SF Mono,
-    Menlo,
-    Consolas,
-    Liberation Mono,
-    monospace;
-  font-size: 85%;
+    font-weight: 600;
+    padding: 3px 5px;
+    border-radius: 2px;
+    background-color: var(--color-background-mute);
+    font-family:
+        ui-monospace,
+        SFMono-Regular,
+        SF Mono,
+        Menlo,
+        Consolas,
+        Liberation Mono,
+        monospace;
+    font-size: 85%;
 }

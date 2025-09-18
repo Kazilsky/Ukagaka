@@ -8,28 +8,31 @@ const api = {}
 // renderer only if context isolation is enabled, otherwise
 // just add to the DOM global.
 if (process.contextIsolated) {
-  try {
-    contextBridge.exposeInMainWorld('electron', electronAPI)
-    contextBridge.exposeInMainWorld('api', api)
-    contextBridge.exposeInMainWorld('electronAPI', {
-      moveWindow: (dx, dy) => ipcRenderer.send('move-window', { dx, dy }),
-      setIgnoreMouse: (ignore) => ipcRenderer.send('set-ignore-mouse', ignore),
-    })
-    contextBridge.exposeInMainWorld('AiRequest', {
-      test: () => console.log('test'),
-      get: (prompt) => {
-        return new Promise((resolve, reject) => {
-          ipcRenderer.once('ai-response', (event, response) => {
-            resolve(response)
-          })
-          ipcRenderer.send('ai-request', prompt)
+    try {
+        contextBridge.exposeInMainWorld('electron', electronAPI)
+        contextBridge.exposeInMainWorld('api', api)
+        contextBridge.exposeInMainWorld('electronAPI', {
+            moveWindow: (dx, dy) => ipcRenderer.send('move-window', { dx, dy }),
+            setIgnoreMouse: (ignore) => ipcRenderer.send('set-ignore-mouse', ignore)
         })
-      }
-    })
-  } catch (error) {
-    console.error(error)
-  }
+
+        contextBridge.exposeInMainWorld('AiRequest', {
+            test: () => console.log('test'),
+            get: (prompt) => {
+                return new Promise((resolve, reject) => {
+                    ipcRenderer.once('ai-response', (event, response) => {
+                        resolve(response)
+                    })
+                    ipcRenderer.send('ai-request', prompt)
+                })
+            },
+            onEmoteChange: (callback) => ipcRenderer.on('change-emote', callback),
+            removeEmoteListener: (callback) => ipcRenderer.removeListener('change-emote', callback)
+        })
+    } catch (error) {
+        console.error(error)
+    }
 } else {
-  window.electron = electronAPI
-  window.api = api
+    window.electron = electronAPI
+    window.api = api
 }
